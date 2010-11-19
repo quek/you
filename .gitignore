@@ -1,0 +1,4 @@
+*~
+_darcs
+*.fasl
+example/tt/rucksack/*
