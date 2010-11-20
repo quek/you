@@ -6,13 +6,28 @@
           with-result-set))
 
 
-(defmacro with-db (var &body body)
-  `(clsql:with-database (,var *connection-spec*
-                              :database-type *database-type*
-                              :if-exists :new
-                              :pool t
-                              :make-default nil)
-     ,@body))
+(defmacro with-db ((&optional (db-var 'clsql:*default-database*)) &body body)
+  `(clsql:with-database (,db-var (connection-spec *env*) :make-default t :pool t
+                                 :encoding :utf-8 :database-type *database-type*)
+     (clsql-sys::start-sql-recording)
+     (unwind-protect
+          (progn
+            (clsql:execute-command "set character_set_client='utf8'")
+            (clsql:execute-command "set character_set_connection='utf8'")
+            (clsql:execute-command "set character_set_results='utf8'")
+            (clsql-sys:with-transaction (:database ,db-var)
+              ,@body))
+       (clsql-sys::stop-sql-recording))))
+
+
+(defun ensure-database-exist ()
+  (let ((exist (and (ignore-errors (with-db () (clsql:query "select 1"))) t)))
+    (unless exist
+      (clsql-sys:create-database (connection-spec *env*) :database-type *database-type*))
+    exist))
+;; (clsql:destroy-database (connection-spec *env*) :database-type *database-type*)
+;; (ensure-database-exist)
+
 
 (defun |#q-quote-reader| (stream char)
   (declare (ignore char))
@@ -38,7 +53,7 @@
   (:method (x)
     (princ-to-string x))
   (:method ((x string))
-    (string+ #\' (cl-ppcre:regex-replace-all "'" x "''") #\'))
+    (str #\' (cl-ppcre:regex-replace-all "'" x "''") #\'))
   (:method ((x symbol))
     (substitute #\_ #\- (symbol-name x))))
 
@@ -90,12 +105,12 @@
                  (collect-result-symbol
                   (car body)
                   (collect-result-symbol (cdr body) symbols)))))
-    `(let ,(mapcar #`(,_ (cdr (assoc ,(key-symbol _)
-                                     ,result-set)))
+    `(let ,(mapcar (^ `(,_ (cdr (assoc ,(key-symbol _)
+                                       ,result-set))))
             (collect-result-symbol body nil))
        ,@body)))
 
-(defmacro! do-query ((query &rest params) &body body)
+(defmacro do-query ((query &rest params) &body body)
   (labels ((result-symbol-p (x)
              (and (symbolp x) (symbol-head-p x "$")))
            (key-symbol (x)
@@ -108,13 +123,14 @@
                  (collect-result-symbol
                   (car body)
                   (collect-result-symbol (cdr body) symbols)))))
-    `(multiple-value-bind (,g!result ,g!field-names)
-         (clsql-sys:query (sexp>sql
-                           ,(m-replace-query-parameter query params)))
-       (loop for ,g!row in ,g!result
-             for *result-set* = (make-query-result-assoc ,g!row ,g!field-names)
-             collect (with-result-set (*result-set*)
-                       ,@body)))))
+    (alexandria:with-gensyms (result field-names row)
+      `(multiple-value-bind (,result ,field-names)
+           (clsql-sys:query (sexp>sql
+                             ,(m-replace-query-parameter query params)))
+         (loop for ,row in ,result
+               for *result-set* = (make-query-result-assoc ,row ,field-names)
+               collect (with-result-set (*result-set*)
+                         ,@body))))))
 
 (defun execute-sql (sql &rest parameters)
   (loop for (p v) on parameters by #'cddr

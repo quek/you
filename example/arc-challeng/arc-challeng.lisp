@@ -1,3 +1,10 @@
+#|
+(defop said req
+  (aform [w/link (pr \"you said: \" (arg _ \"foo\"))
+         (pr \"click here\")]
+         (input \"foo\")
+         (submit)))
+|#
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :you))
 
@@ -6,17 +13,10 @@
 
 (in-package :arc-challeng)
 
-#|
-(defop said req
-  (aform [w/link (pr \"you said: \" (arg _ \"foo\"))
-         (pr \"click here\")]
-         (input \"foo\")
-         (submit)))
-|#
-
 (defmacro default-template ((&key (title "Arc Challenge")) &body body)
-  `(html (:head (:title ,title))
-        (:body ,@body)))
+  `(html
+     (:html (:head (:title ,title))
+            (:body ,@body))))
 
 (defaction arc1 ()
   (default-template ()

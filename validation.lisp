@@ -20,7 +20,7 @@
 
 (defmacro defvalidation (name (&key error-action) &body body)
   (alexandria:with-gensyms (result)
-    `(defmethod ,name :around ()
+    `(defmethod ,name :around (action)
                 (let ((*error-messages* nil))
                   ,@(mapcar (lambda (form)
                               `(let ((,result (apply ',(cadr form)
@@ -31,7 +31,7 @@
                                          *error-messages*))))
                             body)
                   (if *error-messages*
-                      (,error-action)
+                      (,error-action action)
                       (call-next-method))))))
 
 (defun required (value &key (message "入力してください。"))

@@ -2,14 +2,9 @@
 
 (export '(start))
 
-(setf hunchentoot:*hunchentoot-default-external-format*
-      (flexi-streams:make-external-format :utf-8)
+(setf hunchentoot:*hunchentoot-default-external-format* (flexi-streams:make-external-format :utf-8)
       hunchentoot:*default-content-type* "text/html; charset=utf-8"
-      hunchentoot:*catch-errors-p* nil
-      hunchentoot:*show-lisp-errors-p* t)
-
-(defvar *url-prefix* "/you/")
-(defvar *port* 8888)
+      hunchentoot:*catch-errors-p* nil)
 
 (defgeneric dispatch ()
   (:method ()
@@ -25,4 +20,3 @@
 (defun start ()
   (let ((acceptor (make-instance 'hunchentoot:acceptor :port *port*)))
     (setf *server* (hunchentoot:start acceptor))))
-

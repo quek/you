@@ -3,13 +3,14 @@
   :version "0.0.0"
   :serial t
   :components ((:file "package")
+               (:file "config")
                (:file "util")
                (:file "http")
                (:file "html")
                (:file "tag")
                (:file "js")
-               ;;(:file "sql-config")
-               ;;(:file "sql")
+               (:file "sql-config")
+               (:file "sql")
                (:file "strage")
                (:file "validation")
                (:file "action")
@@ -17,6 +18,6 @@
   :depends-on (quek
                hunchentoot
                cl-ppcre
-               ;;clsql
+               clsql
                rucksack
                parenscript))
