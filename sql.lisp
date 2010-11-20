@@ -3,7 +3,15 @@
 (export '(do-query
           execute-sql
           *result-set*
-          with-result-set))
+          with-result-set
+          basic-view-mixin
+          text
+          id
+          id-mixin
+          created-at
+          created-at-mixin
+          updated-at
+          updated-at-mixin))
 
 
 (defmacro with-db ((&optional (db-var 'clsql:*default-database*)) &body body)
@@ -136,6 +144,52 @@
   (loop for (p v) on parameters by #'cddr
         do (setq sql (replace-query-parameter p v sql)))
   (clsql-sys:execute-command (sexp>sql sql)))
+
+
+(deftype clsql::text ()
+  'string)
+
+(export 'clsql::text :clsql)
+
+(defmethod clsql-sys:database-get-type-specifier ((type (eql 'clsql::text)) args database db-type)
+           (declare (ignore args database db-type))
+           "TEXT")
+
+(defun print-slots (object &optional (stream t))
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~{~{~a: ~a~}~^ ~}"
+            (collect
+                (#M(^ (list _ (slot-value object _)))
+                   (choose-if
+                    (complement (^ eq 'clsql-sys::view-database _))
+                    (c2mop:slot-definition-name
+                     (scan (c2mop:class-slots (class-of object))))))))))
+
+(clsql:def-view-class id-mixin ()
+  ((id :initarg :id :accessor id :type integer
+       :db-kind :key
+       :db-constraints :auto-increment)))
+
+(clsql:def-view-class created-at-mixin ()
+  ((created-at :initarg :created-at :initform (clsql:get-time)
+               :accessor created-at
+               :type clsql:wall-time)))
+
+(clsql:def-view-class updated-at-mixin ()
+  ((updated-at :initarg :updated-at :initform (clsql:get-time)
+               :accessor updated-at
+               :type clsql:wall-time)))
+
+(clsql:def-view-class basic-view-mixin (id-mixin created-at-mixin updated-at-mixin)
+  ())
+
+(defmethod print-object ((self  basic-view-mixin) stream)
+  (print-slots self stream))
+
+(defmethod clsql:update-records-from-instance :before ((self updated-at-mixin) &rest args)
+  (declare (ignore args))
+  (setf (updated-at self) (clsql:get-time)))
+
 
 #|
 (let ((q #q(select * from todo where content like :a and done = :b)))

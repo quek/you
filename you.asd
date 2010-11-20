@@ -11,7 +11,7 @@
                (:file "js")
                (:file "sql-config")
                (:file "sql")
-               (:file "strage")
+               ;;(:file "strage")
                (:file "validation")
                (:file "action")
                (:file "you"))
@@ -20,4 +20,5 @@
                cl-ppcre
                clsql
                rucksack
-               parenscript))
+               parenscript
+               closer-mop))
