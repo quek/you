@@ -61,19 +61,6 @@
                 (scan (clsql:select 'entry :flatp t :refresh t))))))
 
 
-;;    (loop for i in (clsql:select 'entry :flatp t :refresh t)
-;;          collect (html
-;;                    (:h3 (title i) " ("(id i) ")")
-;;                   (:div :class :content (content i))))))
-
-
-;;(defaction index.html ()
-;;  (with-default-template ()
-;;    (:h1 "ブログ")
-;;    (collect (#M(^ html
-;;                   (:h3 (title _) " ("(id _) ")")
-;;                   (:div :class :content (content _)))
-;;                (scan (clsql:select 'entry :flatp t))))))
 
 ;; (defaction todo ()
 ;;   (with-default-template (:title "TODO リスト")
