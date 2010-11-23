@@ -11,10 +11,12 @@
           created-at
           created-at-mixin
           updated-at
-          updated-at-mixin))
+          updated-at-mixin
+          with-db*
+          with-db))
 
 
-(defmacro with-db ((&optional (db-var 'clsql:*default-database*)) &body body)
+(defmacro with-db* ((&optional (db-var 'clsql:*default-database*)) &body body)
   `(clsql:with-database (,db-var (connection-spec *env*) :make-default t :pool t
                                  :encoding :utf-8 :database-type *database-type*)
      (clsql-sys::start-sql-recording)
@@ -27,9 +29,12 @@
               ,@body))
        (clsql-sys::stop-sql-recording))))
 
+(defmacro with-db (&body body)
+  `(with-db* () ,@body))
+
 
 (defun ensure-database-exist ()
-  (let ((exist (and (ignore-errors (with-db () (clsql:query "select 1"))) t)))
+  (let ((exist (and (ignore-errors (with-db (clsql:query "select 1"))) t)))
     (unless exist
       (clsql-sys:create-database (connection-spec *env*) :database-type *database-type*))
     exist))

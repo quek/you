@@ -115,6 +115,5 @@
                   (:div :class :content $content))))))
 
 #|
-(you::with-db clsql-sys:*default-database*
-  (execute-sql #q(delete from chat)))
+(with-db (execute-sql #q(delete from chat)))
 |#

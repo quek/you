@@ -16,13 +16,13 @@
    (category-id :initarg :category-id :accessor category-id :type integer)))
 
 #|
-(with-db ()
+(with-db
   (clsql:update-records-from-instance (make-instance 'entry :title "まみ" :content "めも♪")))
 
-(with-db ()
+(with-db
   (clsql:query "select * from ENTRY"))
 
-(with-db ()
+(with-db
   (let ((entry (car (clsql:select 'entry :limit 1 :flatp t))))
     (setf (content entry) "ばーばーよ♪")
     (clsql-sys:update-records-from-instance entry)))
@@ -30,15 +30,15 @@
 
 #+ignore
 (progn
-  (with-db () (clsql:drop-view-from-class 'entry))
-  (with-db () (clsql:drop-view-from-class 'category))
-  (with-db () (clsql:drop-view-from-class 'entry-categories)))
+  (with-db (clsql:drop-view-from-class 'entry))
+  (with-db (clsql:drop-view-from-class 'category))
+  (with-db (clsql:drop-view-from-class 'entry-categories)))
 
 #+ignore
 (progn
-  (with-db () (clsql:create-view-from-class 'entry))
-  (with-db () (clsql:create-view-from-class 'category))
-  (with-db () (clsql:create-view-from-class 'entry-categories)))
+  (with-db (clsql:create-view-from-class 'entry))
+  (with-db (clsql:create-view-from-class 'category))
+  (with-db (clsql:create-view-from-class 'entry-categories)))
 
 
 (defmacro with-default-template ((&key (title "ブログ")) &body body)
@@ -56,7 +56,7 @@
   (with-default-template ()
     (:h1 "ブログ")
     (collect (#M(^ html
-                   (:h3 #"""#,(title _) <#,(id _)>""")
+                   (:h3 (:a :href #"""entry/#,(id _)""" #"""#,(title _) <#,(id _)>"""))
                    (:div :class :content (content _)))
                 (scan (clsql:select 'entry :flatp t :refresh t))))))
 

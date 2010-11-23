@@ -181,8 +181,9 @@
 (defun url (path &rest query-parameters)
   (with-output-to-string (*standard-output*)
     (write-string (to-html path))
-    (loop for (a b) on query-parameters by #'cddr
-            initially (write-string "?")
-          do (format *standard-output* "~a=~a"
-                                       (to-html a)
-                                       (to-html b)))))
+    (when query-parameters
+      (loop for (a b) on query-parameters by #'cddr
+              initially (write-string "?")
+            do (format *standard-output* "~a=~a"
+                                         (to-html a)
+                                         (to-html b))))))

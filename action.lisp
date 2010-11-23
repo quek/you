@@ -22,12 +22,12 @@
     (ppcre:register-groups-bind (package symbol-name) ("([^/]+)/([^?/]+)" url)
       (let ((action-symbol (find-symbol (string-upcase symbol-name)
                                         (find-package (string-upcase package)))))
-        (iterate ((each (scan-lists-of-lists-fringe (call-by-symbol action action-symbol))))
-          (render each *browser*))))))
+        (collect-ignore
+         (render (scan-lists-of-lists-fringe (call-by-symbol action action-symbol))
+                 *browser*))))))
 
 (defmethod call-by-url :around ((action action) url)
-  (with-db ()
-    (call-next-method)))
+  (with-db (call-next-method)))
 
 (defmethod call-by-symbol ((action action) (symbol symbol))
   (unless (get symbol :action)
