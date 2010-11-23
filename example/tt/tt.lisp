@@ -9,7 +9,7 @@
                                  "js/" (directory-namestring *load-truename*))))
 (pushnew *js-dispatcher* hunchentoot:*dispatch-table*)
 
-(with-db
+(with-ruck
   (defclass place ()
     ((name :initarg :name :accessor name-of :index :string-index :unique t)
      (times :initarg :times :initform () :accessor times-of))
@@ -55,7 +55,7 @@
 
 #+nil
 (progn
-  (with-db
+  (with-ruck
     (loop for ((name data)) on
           '(("ちょこぼの森" (8 23 9 12 10 43 13 01 15 00 17 30))
             ("かっぱ沼" (10 11 11 1 12 45 17 32 18 9 20 55 23 45 23 55))
@@ -67,7 +67,7 @@
                           (make-instance 'time-entry
                                :direction "上り"
                                :time (dt:make-time h m 0))))))
-  (with-db
+  (with-ruckqoq
     (rucksack:rucksack-do-class (x 'place) (print x))
     (rucksack:rucksack-map-class rucksack:*rucksack* 'time-entry #'print))
   )

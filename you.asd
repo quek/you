@@ -13,6 +13,7 @@
                (:file "sql")
                ;;(:file "strage")
                (:file "validation")
+               (:file "route")
                (:file "action")
                (:file "you"))
   :depends-on (quek

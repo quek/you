@@ -9,19 +9,33 @@
 (defclass action ()
     ())
 
-(defmacro defaction (name (&rest options) &body body)
-  "options は権限的な何かに使えそう。"
-  (declare (ignore options))
-  `(progn
-     (setf (get ',name :action) t)
-     (defmethod ,name ((action ,*default-action-class*))
-       (with-http-parameters ,@body))))
+;; TODO ^$ #anchor
+(defun default-route-from-symbol (symbol)
+  (format nil "~(~a/~a~)"
+          (package-name (symbol-package symbol))
+          (symbol-name symbol)))
+
+;; TODO ^$ #anchor
+(defmacro defaction (name (&key (route (default-route-from-symbol name))) &body body)
+  (alexandria:with-gensyms (url)
+    `(progn
+       (setf (get ',name :action) t)
+       ,(multiple-value-bind (regexp bindings) (path-to-regexp route)
+          `(add-route ',name
+                      (lambda (,url)
+                        ,(if bindings
+                             `(ppcre:register-groups-bind ,bindings (,regexp ,url)
+                                (values ',name
+                                        (list ,@(collect (#M(lambda (x) `(cons ',x ,x))
+                                                            (scan bindings))))))
+                             `(when (ppcre:scan ,regexp ,url) ',name)))))
+       (defmethod ,name ((action ,*default-action-class*))
+                  (with-http-parameters ,@body)))))
 
 (defmethod call-by-url ((action action) url)
   (with-output-to-string (*response-stream*)
-    (ppcre:register-groups-bind (package symbol-name) ("([^/]+)/([^?/]+)" url)
-      (let ((action-symbol (find-symbol (string-upcase symbol-name)
-                                        (find-package (string-upcase package)))))
+    (multiple-value-bind (action-symbol bindins) (get-route url)
+      (let ((*get-parameters* (append bindins *get-parameters*)))
         (collect-ignore
          (render (scan-lists-of-lists-fringe (call-by-symbol action action-symbol))
                  *browser*))))))
@@ -40,4 +54,3 @@
         (action (make-instance *default-action-class*)))
     (let ((res (call-by-url action (subseq url (length *url-prefix*)))))
       res)))
-

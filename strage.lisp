@@ -1,6 +1,6 @@
 (in-package :you)
 
-(export '(with-db))
+(export '(with-ruck))
 
 (defvar *rucksack-dir* "/tmp/rucksack/")
 
@@ -9,5 +9,5 @@
      (rucksack:with-transaction ()
        ,@body)))
 
-(defmacro with-db (&body body)
+(defmacro with-ruck (&body body)
   `(ruck ,@body))

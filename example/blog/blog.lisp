@@ -1,7 +1,7 @@
 ;;;;-*- coding: utf-8 -*-
 (in-package :you.example.blog)
 
-(clsql:locally-enable-sql-reader-syntax)
+(clsql:file-enable-sql-reader-syntax)
 
 (clsql:def-view-class entry (basic-view-mixin)
   ((title :initarg :title :accessor title :type string)
@@ -60,6 +60,12 @@
                    (:div :class :content (content _)))
                 (scan (clsql:select 'entry :flatp t :refresh t))))))
 
+(defaction entry (:route "entry/:id")
+  (let ((entry (car (clsql:select 'entry :where [= [id] @id] :flatp t))))
+    (with-default-template ()
+      (:h1 (title entry))
+      (:div (content entry))
+      (:div (:a :href "../index.html" "戻る")))))
 
 
 ;; (defaction todo ()
