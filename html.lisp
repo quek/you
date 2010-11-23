@@ -3,7 +3,8 @@
 (export '(html
           html*
           url
-          print-to-html
+          to-html
+          raw
           parameter
           get-parameter
           post-parameter))
@@ -11,6 +12,18 @@
 (defvar *get-parameters* nil)
 
 (defvar *post-parameters* nil)
+
+(defun escape-html (s)
+  (with-output-to-string (out)
+    (collect-ignore
+     (#M(^ princ (case _
+                   (#\& "&amp;")
+                   (#\< "&lt;")
+                   (#\> "&gt;")
+                   (#\" "&quot;")
+                   (t _))
+           out)
+        (scan s)))))
 
 (defun %assoc (key alist)
   (assoc key alist :test #'string-equal))
@@ -76,19 +89,28 @@
           finally (return (values tag-class tag-name attributs body)))))
 
 
-(defgeneric print-to-html (object)
-  (:method (object)
-    (prin1-to-string object)))
+(defgeneric to-html (object))
 
-(defmethod print-to-html ((object null))
+(defclass raw-html ()
+  ((valeu :initarg :value :accessor value)))
+
+(defmethod to-html ((x raw-html))
+  (value x))
+
+(defmethod to-html (x)
+  (escape-html (prin1-to-string x)))
+
+(defmethod to-html ((object null))
   "")
 
-(defmethod print-to-html ((object string))
-  object)
+(defmethod to-html ((object string))
+  (escape-html object))
 
-(defmethod print-to-html ((object symbol))
+(defmethod to-html ((object symbol))
   (string-downcase (symbol-name object)))
 
+(defun raw (x)
+  (make-instance 'raw-html :value x))
 
 (defun replace-request-parameters (x)
   (cond ((and (symbolp x) (< 1 (length (symbol-name x))))

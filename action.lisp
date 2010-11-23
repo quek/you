@@ -2,8 +2,6 @@
 
 (export '(defaction))
 
-(defvar *response-stream* *standard-output*)
-
 (defvar *default-action-class* 'action)
 
 (defgeneric call-by-url (action url))

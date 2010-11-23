@@ -43,18 +43,28 @@
 
 (defmacro with-default-template ((&key (title "ブログ")) &body body)
   `(html (:html
-           (:head (:title ,title)
-                  (:script :type "text/javascript"
-                           :src "http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"))
-           (:body ,@body))))
+           (:head
+            (:meta :charset "UTF-8")
+            (:title ,title)
+            (:script :type "text/javascript"
+                     :src "http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"))
+           (:body
+            (:div (get-universal-time))
+            ,@body))))
 
 (defaction index.html ()
   (with-default-template ()
     (:h1 "ブログ")
-    (loop for i in (clsql:select 'entry :flatp t :refresh t)
-          collect (html
-                   (:h3 (title i) " ("(id i) ")")
-                   (:div :class :content (content i))))))
+    (collect (#M(^ html
+                   (:h3 #"""#,(title _) <#,(id _)>""")
+                   (:div :class :content (content _)))
+                (scan (clsql:select 'entry :flatp t :refresh t))))))
+
+
+;;    (loop for i in (clsql:select 'entry :flatp t :refresh t)
+;;          collect (html
+;;                    (:h3 (title i) " ("(id i) ")")
+;;                   (:div :class :content (content i))))))
 
 
 ;;(defaction index.html ()

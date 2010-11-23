@@ -1,5 +1,32 @@
 (in-package :you)
 
+(defgeneric render (tag browser))
+
+(defclass browser ()
+  ((name :initarg :name :accessor name-of)
+   (doctype :initarg :doctype :initform "" :accessor doctype-of)))
+
+(defclass html-browser (browser)
+  ())
+
+(defclass xhtml-browser (browser)
+  ())
+
+(defclass html-5-browser (html-browser)
+  ()
+  (:default-initargs
+      :doctype "<!DOCTYPE html>"))
+
+(defclass html-4.01-strict-browser (html-browser)
+  ()
+  (:default-initargs
+      :doctype "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"))
+
+(defclass chtml-browser (browser)
+  ())
+
+(defvar *browser* (make-instance 'html-5-browser))
+
 (defclass name-mixin ()
   ((name :initarg :name :initform nil :accessor name-of)))
 
@@ -40,8 +67,8 @@
   (with-accessors ((name name-of) (value value-of)) object
     (print-unreadable-object (object stream :type t :identity t)
       (format stream "~a=\"~a\""
-              (print-to-html name)
-              (print-to-html value)))))
+              (to-html name)
+              (to-html value)))))
 
 (defmethod print-object ((object tag) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -49,7 +76,7 @@
 
 (defmethod parameter-value ((tag tag))
   (awhen (find-attribute tag :name)
-    (parameter (print-to-html (value-of it)))))
+    (parameter (to-html (value-of it)))))
 
 (defvar *tags* (make-hash-table))
 
@@ -57,6 +84,9 @@
   `(progn
      (setf (gethash ,(intern (symbol-name name) :keyword) *tags*) ',name)
      (defclass ,name ,@body)))
+
+(deftag html (tag)
+  ())
 
 (deftag submit (tag)
   ())
@@ -93,76 +123,66 @@
                  (equal value (parameter-value self)))
         (add-attribute self (cons :checked :true))))))
 
-(let ((*get-parameters* '(("done" . "t") ("q" . ""))))
-  (parameter :name))
-(defclass browser ()
-  ((name :accessor name-of)
-   (doctype :initform "" :accessor doctype-of)))
-
-(defclass html-browser (browser)
+(deftag no-body-tag (tag)
   ())
 
-(defclass html-4.01-strict-browser (html-browser)
-  ()
-  (:default-initargs
-      :doctype "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"))
-
-(defclass xhtml-browser (browser)
+(deftag meta (no-body-tag)
   ())
 
-(defclass chtml-browser (browser)
-  ())
+(defmethod render ((object null) (browser browser))
+  nil)
 
-(defgeneric render (tag browser)
-  (:method ((object null) (browser browser))
-    nil)
-;;  (:method ((object list) (browser browser))
-;;    (mapc (lambda (x) (render x browser)) object))
-  (:method (object (browser browser))
-    (princ object *response-stream*)))
+(defmethod render (object (browser browser))
+  (princ (to-html object) *response-stream*))
 
 (defmethod render ((self attribute) browser)
   (format *response-stream* " ~a=\"~a\""
-          (print-to-html (name-of self))
-          (print-to-html (value-of self))))
+          (to-html (name-of self))
+          (to-html (value-of self))))
 
 (defmethod render ((self attributes) browser)
   (loop for i in (value-of self)
         do (render i browser)))
 
-(defmethod render ((tag tag) (browser html-browser))
-  (with-accessors ((name name-of) (attributes attributes-of) (body body-of))
-      tag
+(defmethod render ((tag no-body-tag) (browser html-browser))
+  (with-accessors ((name name-of) (attributes attributes-of) (body body-of)) tag
     (format *response-stream* "<~a" name)
     (render attributes browser)
     (format *response-stream* "~%>")
     (when body
-      (iterate ((x (scan-lists-of-lists-fringe body)))
-               (render x browser)))
+      (collect-ignore (render (scan-lists-of-lists-fringe body) browser))
+      (format *response-stream* "</~a~&>" name))))
+
+(defmethod render ((tag tag) (browser html-browser))
+  (with-accessors ((name name-of) (attributes attributes-of) (body body-of)) tag
+    (format *response-stream* "<~a" name)
+    (render attributes browser)
+    (format *response-stream* "~%>")
+    (when body
+      (collect-ignore (render (scan-lists-of-lists-fringe body) browser)))
     (format *response-stream* "</~a~&>" name)))
 
 (defmethod render ((tag tag) (browser xhtml-browser))
-  (with-accessors ((name name-of) (attributes attributes-of) (body body-of))
-      tag
+  (with-accessors ((name name-of) (attributes attributes-of) (body body-of)) tag
     (format *response-stream* "<~a" name)
     (render attributes browser)
     (if body
         (progn
-          (iterate ((x (scan-lists-of-lists-fringe body)))
-                   (render x browser))
-          (format *response-stream* "</~a>" name))
+          (format *response-stream* ">")
+          (collect-ignore (render (scan-lists-of-lists-fringe body) browser))
+          (format *response-stream* "</~a~&>" name))
         (format *response-stream* " />"))))
 
-(defvar *browser* (make-instance 'html-browser))
-
+(defmethod render :before ((html html) browser)
+  (format *response-stream* "~a~&" (doctype-of browser)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun url (path &rest query-parameters)
   (with-output-to-string (*standard-output*)
-    (write-string (print-to-html path))
+    (write-string (to-html path))
     (loop for (a b) on query-parameters by #'cddr
             initially (write-string "?")
           do (format *standard-output* "~a=~a"
-                                       (print-to-html a)
-                                       (print-to-html b)))))
+                                       (to-html a)
+                                       (to-html b)))))

@@ -24,7 +24,7 @@
                 (let ((*error-messages* nil))
                   ,@(mapcar (lambda (form)
                               `(let ((,result (apply ',(cadr form)
-                                                       (parameter ,(print-to-html (car form)))
+                                                       (parameter ,(to-html (car form)))
                                                        (list ,@(cddr form)))))
                                  (when ,result
                                    (push (cons ',(car form) ,result)
