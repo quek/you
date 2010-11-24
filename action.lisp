@@ -28,7 +28,8 @@
                                 (values ',name
                                         (list ,@(collect (#M(lambda (x) `(cons ',x ,x))
                                                             (scan bindings))))))
-                             `(when (ppcre:scan ,regexp ,url) ',name)))))
+                             `(when (ppcre:scan ,regexp ,url) ',name)))
+                      ,(path-to-path-function route)))
        (defmethod ,name ((action ,*default-action-class*))
                   (with-http-parameters ,@body)))))
 

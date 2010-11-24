@@ -56,7 +56,7 @@
   (with-default-template ()
     (:h1 "ブログ")
     (collect (#M(^ html
-                   (:h3 (:a :href #"""entry/#,(id _)""" #"""#,(title _) <#,(id _)>"""))
+                   (:h3 (:a :href (path-for 'entry :id (id _)) #"""#,(title _) <#,(id _)>"""))
                    (:div :class :content (content _)))
                 (scan (clsql:select 'entry :flatp t :refresh t))))))
 
@@ -65,7 +65,7 @@
     (with-default-template ()
       (:h1 (title entry))
       (:div (content entry))
-      (:div (:a :href "../index.html" "戻る")))))
+      (:div (:a :href (path-for 'index.html) "戻る")))))
 
 
 ;; (defaction todo ()
