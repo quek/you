@@ -171,7 +171,9 @@
                      (scan (c2mop:class-slots (class-of object))))))))))
 
 (clsql:def-view-class id-mixin ()
-  ((id :initarg :id :accessor id :type integer
+  ((id :initarg :id
+       :accessor id
+       :type integer
        :db-kind :key
        :db-constraints :auto-increment)))
 

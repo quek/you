@@ -4,7 +4,7 @@
 
 (defvar *routes* nil)
 
-(defstruct route ()
+(defstruct route
   symbol
   apply-function
   path-function)

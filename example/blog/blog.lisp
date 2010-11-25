@@ -55,10 +55,27 @@
 (defaction index.html ()
   (with-default-template ()
     (:h1 "ブログ")
+    (:a :href (path-for 'new-entry) "投稿")
     (collect (#M(^ html
                    (:h3 (:a :href (path-for 'entry :id (id _)) #"""#,(title _) <#,(id _)>"""))
                    (:div :class :content (content _)))
-                (scan (clsql:select 'entry :flatp t :refresh t))))))
+                (scan (clsql:select 'entry :flatp t :refresh t :order-by '(([created-at] :desc))))))))
+
+(defaction new-entry (:route "entry/new")
+  (with-default-template ()
+    (:h1 "投稿")
+    (:form :action (path-for 'create-entry) :method :post
+           (:div "タイトル" (:text :name :title))
+           (:textarea :name :content :rows 5 :cols 40)
+           (:submit :value "投稿"))
+    (:a :href (path-for 'index.html) "戻る")))
+
+(defaction create-entry ()
+  ;; TODO redirect で throw するので無駄に新しいトランザクションを作る
+  (with-db
+    (clsql:update-records-from-instance
+     (make-instance 'entry :title @title :content @content)))
+  (redirect (path-for 'index.html)))
 
 (defaction entry (:route "entry/:id")
   (let ((entry (car (clsql:select 'entry :where [= [id] @id] :flatp t))))
