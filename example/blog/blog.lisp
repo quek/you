@@ -49,7 +49,6 @@
             (:script :type "text/javascript"
                      :src "http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"))
            (:body
-            (:div (get-universal-time))
             ,@body))))
 
 (defaction index.html ()
@@ -64,6 +63,7 @@
 (defaction new-entry (:route "entry/new")
   (with-default-template ()
     (:h1 "投稿")
+    (error-messages)
     (:form :action (path-for 'create-entry) :method :post
            (:div "タイトル" (:text :name :title))
            (:textarea :name :content :rows 5 :cols 40)
@@ -76,6 +76,11 @@
     (clsql:update-records-from-instance
      (make-instance 'entry :title @title :content @content)))
   (redirect (path-for 'index.html)))
+
+(defvalidation create-entry (:error-action new-entry)
+  (title required :message "タイトルを入力してください。")
+  (content required :message "内容を入力してください。"))
+
 
 (defaction entry (:route "entry/:id")
   (let ((entry (car (clsql:select 'entry :where [= [id] @id] :flatp t))))
