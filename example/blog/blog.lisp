@@ -51,16 +51,17 @@
            (:body
             ,@body))))
 
-(defaction index.html ()
+(defaction index (:route "/")
   (with-default-template ()
     (:h1 "ブログ")
     (:a :href (path-for 'new-entry) "投稿")
     (collect (#M(^ html
                    (:h3 (:a :href (path-for 'entry :id (id _)) #"""#,(title _) <#,(id _)>"""))
-                   (:div :class :content (content _)))
+                   (:div :class :content (content _))
+                   (:div (:a :href (path-for 'delete-entry :id (id _)) "削除")))
                 (scan (clsql:select 'entry :flatp t :refresh t :order-by '(([created-at] :desc))))))))
 
-(defaction new-entry (:route "entry/new")
+(defaction new-entry (:route "/entry/new")
   (with-default-template ()
     (:h1 "投稿")
     (error-messages)
@@ -68,26 +69,34 @@
            (:div "タイトル" (:text :name :title))
            (:textarea :name :content :rows 5 :cols 40)
            (:submit :value "投稿"))
-    (:a :href (path-for 'index.html) "戻る")))
+    (:a :href (path-for 'index) "戻る")))
 
 (defaction create-entry ()
   ;; TODO redirect で throw するので無駄に新しいトランザクションを作る
   (with-db
     (clsql:update-records-from-instance
      (make-instance 'entry :title @title :content @content)))
-  (redirect (path-for 'index.html)))
+  (redirect (path-for 'index)))
 
 (defvalidation create-entry (:error-action new-entry)
   (title required :message "タイトルを入力してください。")
   (content required :message "内容を入力してください。"))
 
+(defun find-entry (id)
+  (car (clsql:select 'entry :where [= [id] id] :flatp t)))
 
-(defaction entry (:route "entry/:id")
-  (let ((entry (car (clsql:select 'entry :where [= [id] @id] :flatp t))))
+(defaction delete-entry (:route "/entry/:id/delete")
+  (with-db
+    (let ((entry (find-entry @id)))
+      (clsql:delete-instance-records entry)))
+  (redirect (path-for 'index)))
+
+(defaction entry (:route "/entry/:id")
+  (let ((entry (find-entry @id)))
     (with-default-template ()
       (:h1 (title entry))
       (:div (content entry))
-      (:div (:a :href (path-for 'index.html) "戻る")))))
+      (:div (:a :href (path-for 'index) "戻る")))))
 
 
 ;; (defaction todo ()

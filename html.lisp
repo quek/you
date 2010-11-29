@@ -7,7 +7,8 @@
           raw
           parameter
           get-parameter
-          post-parameter))
+          post-parameter
+          with-http-parameters))
 
 (defvar *get-parameters* nil)
 

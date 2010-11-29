@@ -11,7 +11,7 @@
 
 ;; TODO ^$ #anchor
 (defun default-route-from-symbol (symbol)
-  (format nil "~(~a/~a~)"
+  (format nil "/~(~a/~a~)"
           (package-name (symbol-package symbol))
           (symbol-name symbol)))
 

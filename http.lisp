@@ -4,6 +4,6 @@
 
 (defvar *response-stream* *standard-output*)
 
-(defun redirect (url &optional (dir (directory-namestring (hunchentoot:request-uri*))))
-  (hunchentoot:redirect (str dir (to-html url))))
+(defun redirect (url)
+  (hunchentoot:redirect url))
 

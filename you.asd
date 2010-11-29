@@ -11,6 +11,7 @@
                (:file "js")
                (:file "sql-config")
                (:file "sql")
+               (:file "clsql-metaclass")
                ;;(:file "strage")
                (:file "validation")
                (:file "route")
