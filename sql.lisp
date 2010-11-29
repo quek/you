@@ -21,12 +21,16 @@
                                  :encoding :utf-8 :database-type *database-type*)
      (clsql-sys::start-sql-recording)
      (unwind-protect
-          (progn
+          (let (res)
             (clsql:execute-command "set character_set_client='utf8'")
             (clsql:execute-command "set character_set_connection='utf8'")
             (clsql:execute-command "set character_set_results='utf8'")
             (clsql-sys:with-transaction (:database ,db-var)
-              ,@body))
+              (catch 'hunchentoot::handler-done
+                (setf res (progn ,@body))))
+            (if res
+                res
+                (throw 'hunchentoot::handler-done nil)))
        (clsql-sys::stop-sql-recording))))
 
 (defmacro with-db (&body body)

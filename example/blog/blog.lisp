@@ -72,10 +72,8 @@
     (:a :href (path-for 'index) "戻る")))
 
 (defaction create-entry ()
-  ;; TODO redirect で throw するので無駄に新しいトランザクションを作る
-  (with-db
-    (clsql:update-records-from-instance
-     (make-instance 'entry :title @title :content @content)))
+  (clsql:update-records-from-instance
+   (make-instance 'entry :title @title :content @content))
   (redirect (path-for 'index)))
 
 (defvalidation create-entry (:error-action new-entry)
@@ -86,10 +84,9 @@
   (car (clsql:select 'entry :where [= [id] id] :flatp t)))
 
 (defaction delete-entry (:route "/entry/:id/delete")
-  (with-db
-    (let ((entry (find-entry @id)))
-      (clsql:delete-instance-records entry)))
-  (redirect (path-for 'index)))
+  (let ((entry (find-entry @id)))
+    (clsql:delete-instance-records entry)
+    (redirect (path-for 'index))))
 
 (defaction entry (:route "/entry/:id")
   (let ((entry (find-entry @id)))
